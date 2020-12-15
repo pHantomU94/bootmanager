@@ -1,0 +1,18 @@
+{
+    "type": ["boot", "config", "send"],
+    "boot": {
+        "pattern": "boot.py",
+        "interpreter": "python3",
+        "parallel": true
+    },
+    "config": {
+        "pattern": "config_board.py",
+        "interpreter": "python3",
+        "parallel": true
+    },
+    "send": {
+        "pattern": "send_valid_data.py",
+        "interpreter": "python3",
+        "parallel": true
+    }
+}
