@@ -2,7 +2,6 @@ package main
 
 import (
 	"bootmanager/cmd"
-	"bootmanager/manager"
 	"fmt"
 
 	"net/http"
@@ -25,5 +24,4 @@ func main() {
 		fmt.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 	cmd.Execute()
-	manager.Run()
 }
