@@ -49,11 +49,24 @@ func optionValid(option string, numbers []int) ([]string, bool) {
 	return scripts, true
 }
 
-func runOption(ctx context.Context, interpreter string, script string) {
+func runOption(ctx context.Context, interpreter string, script string, index int) {
 	logrus.Infof("%s start\n", script)
 	commandline := exec.CommandContext(ctx, interpreter, script)
-	// commandline.Stdout = os.Stdout
-	commandline.Stderr = os.Stderr
+
+	// DEBUG: 这里仅作为调试功能
+	if viper.GetBool("logFlag") {
+		logPath := fmt.Sprintf("log%d.txt", index+1)
+		logfile, err := os.OpenFile(logPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+		defer logfile.Close()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
+		commandline.Stdout = logfile
+		commandline.Stderr = logfile
+	} else {
+		commandline.Stdout = os.Stdout
+		commandline.Stderr = os.Stderr
+	}
 	err := commandline.Start()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -68,11 +81,11 @@ func runOption(ctx context.Context, interpreter string, script string) {
 // 执行并行操作
 func parallelRunOption(ctx context.Context, interpreter string, scripts []string) {
 	wg := sync.WaitGroup{}
-	for _, script := range scripts {
+	for index, script := range scripts {
 		wg.Add(1)
 		go func(script string) {
 			defer wg.Done()
-			runOption(ctx, interpreter, script)
+			runOption(ctx, interpreter, script, index)
 		}(script)
 		time.Sleep(time.Duration(10) * time.Microsecond)
 	}
@@ -80,7 +93,7 @@ func parallelRunOption(ctx context.Context, interpreter string, scripts []string
 }
 
 func serialRunOptin(ctx context.Context, interpreter string, scripts []string) {
-	for _, script := range scripts {
-		runOption(ctx, interpreter, script)
+	for index, script := range scripts {
+		runOption(ctx, interpreter, script, index)
 	}
 }
