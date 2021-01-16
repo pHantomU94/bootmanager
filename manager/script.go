@@ -17,7 +17,7 @@ import (
 // 判断操作合法性并返回相应脚本列表
 func optionValid(option string, numbers []int) ([]string, bool) {
 	workDir := viper.GetString("workDir")
-	patten := viper.GetString(option+".pattern")
+	patten := viper.GetString(option + ".pattern")
 	s := strings.Split(patten, ".")
 	if len(s) < 2 {
 		fmt.Fprintln(os.Stderr, "Invalid file pattern of boot")
@@ -27,7 +27,7 @@ func optionValid(option string, numbers []int) ([]string, bool) {
 
 	// 未输入参数全部执行
 	if numbers == nil {
-		fileName := fmt.Sprintf("%s*.%s",s[0], s[1]) 
+		fileName := fmt.Sprintf("%s*.%s", s[0], s[1])
 		path := filepath.Join(workDir, fileName)
 		scripts, err := filepath.Glob(path)
 		if err != nil {
@@ -38,7 +38,7 @@ func optionValid(option string, numbers []int) ([]string, bool) {
 	}
 
 	for _, number := range numbers {
-		fileName := fmt.Sprintf("%s%d.%s",s[0], number, s[1])
+		fileName := fmt.Sprintf("%s%d.%s", s[0], number, s[1])
 		path := filepath.Join(workDir, fileName)
 		if !fileEixst(path) {
 			return nil, false
@@ -49,7 +49,7 @@ func optionValid(option string, numbers []int) ([]string, bool) {
 	return scripts, true
 }
 
-func runOption(ctx context.Context, interpreter string, script string, index int) {
+func runOption(ctx context.Context, interpreter string, script string, index int) error {
 	logrus.Infof("%s start\n", script)
 	commandline := exec.CommandContext(ctx, interpreter, script)
 
@@ -59,7 +59,8 @@ func runOption(ctx context.Context, interpreter string, script string, index int
 		logfile, err := os.OpenFile(logPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 		defer logfile.Close()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			logrus.Errorln(os.Stderr, err)
+			return err
 		}
 		commandline.Stdout = logfile
 		commandline.Stderr = logfile
@@ -69,27 +70,40 @@ func runOption(ctx context.Context, interpreter string, script string, index int
 	}
 	err := commandline.Start()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		logrus.Warnln(err)
+		return err
 	}
 	err = commandline.Wait()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		logrus.Errorln(err)
+		return err
 	}
-	logrus.Infof("%s end\n", script)
+	logrus.Tracef("%s end\n", script)
+	return nil
 }
 
 // 执行并行操作
 func parallelRunOption(ctx context.Context, interpreter string, scripts []string) {
+	var lock sync.Mutex
 	wg := sync.WaitGroup{}
+	failedArr := make([]int, 0)
 	for index, script := range scripts {
 		wg.Add(1)
 		go func(script string) {
 			defer wg.Done()
-			runOption(ctx, interpreter, script, index)
+			err := runOption(ctx, interpreter, script, index)
+			if err != nil {
+				lock.Lock()
+				failedArr = append(failedArr, index)
+				lock.Unlock()
+			}
 		}(script)
 		time.Sleep(time.Duration(10) * time.Microsecond)
 	}
 	wg.Wait()
+
+	logrus.Infof("Option Done. Total: %d. Failed: %d\n", len(scripts), len(failedArr))
+	logrus.Infof("Failed nodes: %v\n", failedArr)
 }
 
 func serialRunOptin(ctx context.Context, interpreter string, scripts []string) {

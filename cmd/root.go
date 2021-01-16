@@ -13,7 +13,7 @@ var (
 	wkDir string	// 工作令
 	cfgFile string	// 配置文件
 	number string	// 文件编号
-	command string 	// 执行的脚本
+	command bool 	// 执行自定义脚本
 	boot bool		// 仅启动
 	confgure bool	// 仅配置
 	send bool		// 仅发送
@@ -42,14 +42,14 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&log, "log", "l", false, "Save log file")
 	rootCmd.PersistentFlags().BoolVarP(&confgure, "configure", "c", false, "Only configure the specified boards")
 	rootCmd.PersistentFlags().BoolVarP(&send, "send", "s", false, "Use Viper for Only Start the sending data program of the specified board")
-	rootCmd.PersistentFlags().StringVar(&command, "command", "", "Specify custom script type")
+	rootCmd.PersistentFlags().BoolVarP(&command, "custom", "u",false, "Specify custom script type")
 	// 用viper收集参数
 	viper.BindPFlag("bootFlag", rootCmd.PersistentFlags().Lookup("boot"))
 	viper.BindPFlag("configureFlag", rootCmd.PersistentFlags().Lookup("configure"))
 	viper.BindPFlag("sendFlag", rootCmd.PersistentFlags().Lookup("send"))
 	viper.BindPFlag("workDir", rootCmd.PersistentFlags().Lookup("workdir"))
 	viper.BindPFlag("numbers", rootCmd.PersistentFlags().Lookup("numbers"))
-	viper.BindPFlag("command", rootCmd.PersistentFlags().Lookup("command"))
+	viper.BindPFlag("customFlag", rootCmd.PersistentFlags().Lookup("custom"))
 	viper.BindPFlag("logFlag", rootCmd.PersistentFlags().Lookup("log"))
 }
 

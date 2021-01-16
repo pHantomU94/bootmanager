@@ -114,7 +114,10 @@ func Run() {
 		options = append(options, "config")
 	}
 	if viper.GetBool("sendFlag") {
-		options  = append(options, "send")
+		options = append(options, "send")
+	}
+	if viper.GetBool("customFlag") {
+		options = append(options, "custom")
 	}
 	if len(options) == 0 {
 		// WARN: 这里需要按需修改为指定脚本类型或者从配置文件读取
