@@ -14,5 +14,10 @@
         "pattern": "send_valid_data.py",
         "interpreter": "python3",
         "parallel": true
+    },
+    "custom": {
+        "pattern": "boot.py",
+        "interpreter": "python3",
+        "parallel": true
     }
 }
