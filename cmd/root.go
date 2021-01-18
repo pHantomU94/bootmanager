@@ -26,7 +26,7 @@ var (
 	  You can use it to easily execute a series of parallel scripts.`,
 		// Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			manager.Run()
+			manager.Run(args)
 		},
 	}
 )

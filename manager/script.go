@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -49,9 +50,12 @@ func optionValid(option string, numbers []int) ([]string, bool) {
 	return scripts, true
 }
 
-func runOption(ctx context.Context, interpreter string, script string, index int) error {
+func runOption(ctx context.Context, interpreter string, script string, index int, args []string) error {
 	logrus.Infof("%s start\n", script)
-	commandline := exec.CommandContext(ctx, interpreter, script)
+	cmdargs := make([]string, 0, 1 + len(args))
+	cmdargs = append(cmdargs, script)
+	cmdargs = append(cmdargs, args...)
+	commandline := exec.CommandContext(ctx, interpreter, cmdargs...)
 
 	// DEBUG: 这里仅作为调试功能
 	if viper.GetBool("logFlag") {
@@ -83,31 +87,37 @@ func runOption(ctx context.Context, interpreter string, script string, index int
 }
 
 // 执行并行操作
-func parallelRunOption(ctx context.Context, interpreter string, scripts []string) {
+func parallelRunOption(ctx context.Context, interpreter string, scripts []string, args []string) {
 	var lock sync.Mutex
 	wg := sync.WaitGroup{}
 	failedArr := make([]int, 0)
 	for index, script := range scripts {
 		wg.Add(1)
-		go func(script string) {
+		go func(script string, num int) {
 			defer wg.Done()
-			err := runOption(ctx, interpreter, script, index)
+			err := runOption(ctx, interpreter, script, index, args)
 			if err != nil {
 				lock.Lock()
-				failedArr = append(failedArr, index)
+				failedArr = append(failedArr, num)
 				lock.Unlock()
 			}
-		}(script)
+		}(script, index)
 		time.Sleep(time.Duration(10) * time.Microsecond)
 	}
 	wg.Wait()
 
-	logrus.Infof("Option Done. Total: %d. Failed: %d\n", len(scripts), len(failedArr))
-	logrus.Infof("Failed nodes: %v\n", failedArr)
+	
+	if len(failedArr) != 0 {
+		sort.Sort(sort.IntSlice(failedArr))
+		logrus.Infof("Option Done. Total: %d. Failed: %d\n", len(scripts), len(failedArr))
+		logrus.Infof("Failed nodes: %v\n", failedArr)
+	} else {
+		logrus.Infof("Option Done. Total: %d. All success!\n", len(scripts))
+	}
 }
 
-func serialRunOptin(ctx context.Context, interpreter string, scripts []string) {
+func serialRunOptin(ctx context.Context, interpreter string, scripts []string, args []string) {
 	for index, script := range scripts {
-		runOption(ctx, interpreter, script, index)
+		runOption(ctx, interpreter, script, index, args)
 	}
 }

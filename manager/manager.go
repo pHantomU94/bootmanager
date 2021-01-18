@@ -98,7 +98,7 @@ func fileEixst(fileName string) bool {
 	return err == nil || os.IsExist(err)
 }
 
-func Run() {
+func Run(args []string) {
 	numbers, valid := getNum()
 	if !valid {
 		fmt.Fprintln(os.Stderr, "Invalid parameter form for -n")
@@ -140,9 +140,9 @@ func Run() {
 		interpreter := viper.GetString(option+".interpreter")
 		parallel := viper.GetBool(option+".parallel")
 		if parallel {
-			parallelRunOption(ctx, interpreter, scripts)
+			parallelRunOption(ctx, interpreter, scripts, args)
 		} else {
-			serialRunOptin(ctx, interpreter, scripts)
+			serialRunOptin(ctx, interpreter, scripts, args)
 		}
 		
 	}
