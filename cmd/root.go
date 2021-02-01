@@ -13,16 +13,18 @@ var (
 	wkDir string	// 工作令
 	cfgFile string	// 配置文件
 	number string	// 文件编号
-	command bool 	// 执行自定义脚本
 	boot bool		// 仅启动
 	confgure bool	// 仅配置
 	send bool		// 仅发送
 	log bool		// 保存日志
+	pattern string  // 自定义格式
+	option string 	// 自定义操作
+	interpreter string
 	rootCmd = &cobra.Command{
 		Use: "bootmanager",
 		Short: "Bootmanager is a parallel scripts boot entry",
 		Long: `A convenient parallel scripts executor built with
-	  love by CASIA-hsj in Go.
+	  love by yinshijun in Go.
 	  You can use it to easily execute a series of parallel scripts.`,
 		// Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -42,14 +44,18 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&log, "log", "l", false, "Save log file")
 	rootCmd.PersistentFlags().BoolVarP(&confgure, "configure", "c", false, "Only configure the specified boards")
 	rootCmd.PersistentFlags().BoolVarP(&send, "send", "s", false, "Use Viper for Only Start the sending data program of the specified board")
-	rootCmd.PersistentFlags().BoolVarP(&command, "custom", "u",false, "Specify custom script type")
+	rootCmd.PersistentFlags().StringVarP(&pattern, "pattern", "p","", "Specify custom script pattern")
+	rootCmd.PersistentFlags().StringVarP(&option, "option", "o","", "Specify custom option")
+	rootCmd.PersistentFlags().StringVarP(&interpreter, "interpreter", "i","", "Specify interpreter for the custom option")
 	// 用viper收集参数
 	viper.BindPFlag("bootFlag", rootCmd.PersistentFlags().Lookup("boot"))
 	viper.BindPFlag("configureFlag", rootCmd.PersistentFlags().Lookup("configure"))
 	viper.BindPFlag("sendFlag", rootCmd.PersistentFlags().Lookup("send"))
 	viper.BindPFlag("workDir", rootCmd.PersistentFlags().Lookup("workdir"))
 	viper.BindPFlag("numbers", rootCmd.PersistentFlags().Lookup("numbers"))
-	viper.BindPFlag("customFlag", rootCmd.PersistentFlags().Lookup("custom"))
+	viper.BindPFlag("pattern", rootCmd.PersistentFlags().Lookup("pattern"))
+	viper.BindPFlag("option", rootCmd.PersistentFlags().Lookup("option"))
+	viper.BindPFlag("interpreter", rootCmd.PersistentFlags().Lookup("interpreter"))
 	viper.BindPFlag("logFlag", rootCmd.PersistentFlags().Lookup("log"))
 }
 
@@ -87,6 +93,7 @@ func initConfig() {
 	}
 }
 
+// Execute rootCmd执行入口
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

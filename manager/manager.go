@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -98,6 +99,7 @@ func fileEixst(fileName string) bool {
 	return err == nil || os.IsExist(err)
 }
 
+// Run 执行程序入口
 func Run(args []string) {
 	numbers, valid := getNum()
 	if !valid {
@@ -116,34 +118,65 @@ func Run(args []string) {
 	if viper.GetBool("sendFlag") {
 		options = append(options, "send")
 	}
-	if viper.GetBool("customFlag") {
-		options = append(options, "custom")
+	if viper.GetString("option") != "" {
+		customOption := viper.GetString("option")
+		if len(viper.GetStringMap(customOption)) == 0 {
+			logrus.Warnf("No custom option [%s] in your configure file, please check.\n", customOption)
+			return
+		} 
+		options = append(options, customOption)
 	}
+
+	customPattern := viper.GetString("pattern")
+	customInterpreter := viper.GetString("interpreter")
+
+	ctx := context.Background()
+	if customPattern != "" {
+		if customInterpreter == "" {
+			logrus.Errorln("You need to specify the interpreter when using custom pattern.")
+			os.Exit(1)
+		}
+		scripts, valid := patternValid(customPattern, numbers)
+		if !valid {
+			logrus.Errorln("Invalid board number range")
+			os.Exit(1)
+		}
+		logrus.Infof("Custom pattern [%s] start.\n", customPattern)
+		parallelRunOption(ctx, customInterpreter, scripts, args)
+	}
+
+	// 判断是否有操作要执行
 	if len(options) == 0 {
 		// WARN: 这里需要按需修改为指定脚本类型或者从配置文件读取
-		options = append(options, "boot", "config", "send")
+		// options = append(options, "boot", "config", "send")
+		// 这里无操作返回
+		if customPattern == ""{
+			logrus.Infoln("No option to do.")
+		}
+		return
 	}
-	scripts_list := make([][]string, 0, 3)
+
+	// 脚本列表
+	scripts_list := make([][]string, 0, len(options))
 	// 判断操作是否合理
 	for _, option := range options {
 		scripts, valid := optionValid(option, numbers)
 		if !valid {
-			fmt.Fprintln(os.Stderr, "Invalid board number range")
+			logrus.Errorln("Invalid board number range")
 			os.Exit(1)
 		}
 		scripts_list = append(scripts_list, scripts)
 	}
 	// 按阶段执行操作
-	ctx := context.Background()
 	for key, scripts := range scripts_list {
 		option := options[key]
 		interpreter := viper.GetString(option+".interpreter")
 		parallel := viper.GetBool(option+".parallel")
+		logrus.Infof("Option [%s] start.\n", option)
 		if parallel {
 			parallelRunOption(ctx, interpreter, scripts, args)
 		} else {
 			serialRunOptin(ctx, interpreter, scripts, args)
 		}
-		
 	}
 }

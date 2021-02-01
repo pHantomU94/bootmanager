@@ -15,13 +15,12 @@ import (
 	"github.com/spf13/viper"
 )
 
-// 判断操作合法性并返回相应脚本列表
-func optionValid(option string, numbers []int) ([]string, bool) {
+// 判断格式的合法性并返回相应脚本列表
+func patternValid(pattern string, numbers []int) ([]string, bool) {
 	workDir := viper.GetString("workDir")
-	patten := viper.GetString(option + ".pattern")
-	s := strings.Split(patten, ".")
+	s := strings.Split(pattern, ".")
 	if len(s) < 2 {
-		fmt.Fprintln(os.Stderr, "Invalid file pattern of boot")
+		logrus.Errorln("Invalid file pattern of boot")
 		os.Exit(1)
 	}
 	scripts := make([]string, 0, len(numbers))
@@ -32,7 +31,7 @@ func optionValid(option string, numbers []int) ([]string, bool) {
 		path := filepath.Join(workDir, fileName)
 		scripts, err := filepath.Glob(path)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err.Error())
+			logrus.Errorln(os.Stderr, err.Error())
 			os.Exit(1)
 		}
 		return scripts, true
@@ -50,8 +49,14 @@ func optionValid(option string, numbers []int) ([]string, bool) {
 	return scripts, true
 }
 
+// 判断操作合法性并返回相应脚本列表
+func optionValid(option string, numbers []int) ([]string, bool) {
+	pattern := viper.GetString(option + ".pattern")
+	return patternValid(pattern, numbers)
+}
+
 func runOption(ctx context.Context, interpreter string, script string, index int, args []string) error {
-	logrus.Infof("%s start\n", script)
+	// logrus.Infof("%s start\n", script)
 	cmdargs := make([]string, 0, 1 + len(args))
 	cmdargs = append(cmdargs, script)
 	cmdargs = append(cmdargs, args...)
@@ -82,7 +87,7 @@ func runOption(ctx context.Context, interpreter string, script string, index int
 		logrus.Errorln(err)
 		return err
 	}
-	logrus.Tracef("%s end\n", script)
+	// logrus.Tracef("%s end\n", script)
 	return nil
 }
 
@@ -95,10 +100,11 @@ func parallelRunOption(ctx context.Context, interpreter string, scripts []string
 		wg.Add(1)
 		go func(script string, num int) {
 			defer wg.Done()
-			err := runOption(ctx, interpreter, script, index, args)
+			err := runOption(ctx, interpreter, script, num, args)
 			if err != nil {
 				lock.Lock()
-				failedArr = append(failedArr, num)
+				// WARN: 这里是从1开始定义的
+				failedArr = append(failedArr, num+1)
 				lock.Unlock()
 			}
 		}(script, index)
