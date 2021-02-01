@@ -1,5 +1,4 @@
 {
-    "type": ["boot", "config", "send"],
     "boot": {
         "pattern": "boot.py",
         "interpreter": "python3",
@@ -17,6 +16,11 @@
     },
     "custom": {
         "pattern": "boot.py",
+        "interpreter": "python3",
+        "parallel": true
+    },
+    "test": {
+        "pattern": "test.py",
         "interpreter": "python3",
         "parallel": true
     }
