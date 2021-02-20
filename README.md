@@ -4,6 +4,7 @@ Bootmanager 是一个支持简单并行批量执行脚本的脚本启动器
 
 ## **目录**
 
+### [部署方式](#部署方式)
 ### [三种模式](#三种模式)
 #### [预设模式](#预设模式)
 #### [自定义命令模式](#自定义命令模式)
@@ -11,6 +12,17 @@ Bootmanager 是一个支持简单并行批量执行脚本的脚本启动器
 ### [配置文件说明](#配置文件说明)
 ### [执行脚本存放路径说明](#执行脚本存放路径说明)
 ### [全部参数说明](#全部参数说明)
+
+### **部署方式**
+
+从github上下载最新版本的[release版本压缩包](https://github.com/pHantomU94/bootmanager/releases)，解压，执行部署脚本
+
+```
+wget https://github.com/pHantomU94/bootmanager/releases/download/v1.0.0/bootmanager.tar.gz
+tar -xzvf bootmanager.tar.gz
+cd bootmanager
+sudo ./build.sh
+```
 
 ### **三种模式**
 #### **预设模式**
@@ -121,4 +133,19 @@ Flags:
   -p, --pattern string       Specify custom script pattern
   -s, --send                 Use Viper for Only Start the sending data program of the specified board
   -d, --workdir string       Work directory (default is current directory)
+```
+
+```
+-f  
+    配置文件路径设置
+-d  
+    指定待执行脚本存放路径
+-b，-c，-s  
+    三种预设模式
+-o  
+    预留自定义模式，可以通过自行修改配置文件中的[custom]键的值来实现自定义配置
+-p  
+    自定义脚本形式，后面接待执行脚本集合的形式，如：test.py 代表所有 test+[数字]+.py 形式的文件，该指令需要与-i一起使用
+-i  
+    指定脚本执行时的解析器类型，与-p共同使用 
 ```
