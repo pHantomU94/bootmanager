@@ -7,13 +7,13 @@ import (
 	// "github.com/sirupsen/logrus"
 )
 
-// func init() {
+func init() {
 
-// 	// logrus.SetFormatter(&logrus.TextFormatter{
-// 	// 	FullTimestamp: true,
-// 	// })
-// 	logrus.SetReportCaller(true)
-// }
+	// logrus.SetFormatter(&logrus.TextFormatter{
+	// 	FullTimestamp: true,
+	// })
+	// logrus.SetReportCaller(true)
+}
 
 func main() {
 	cmd.Execute()

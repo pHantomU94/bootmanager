@@ -25,7 +25,8 @@ var (
 		Short: "Bootmanager is a parallel scripts boot entry",
 		Long: `A convenient parallel scripts executor built with
 	  love by yinshijun in Go.
-	  You can use it to easily execute a series of parallel scripts.`,
+	  You can use it to easily execute a series of parallel scripts.
+	  Version: v 1.0.2`,
 		// Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			manager.Run(args)

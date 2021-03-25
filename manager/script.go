@@ -6,10 +6,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
 	"time"
+	"strconv"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -79,12 +81,12 @@ func runOption(ctx context.Context, interpreter string, script string, index int
 	}
 	err := commandline.Start()
 	if err != nil {
-		logrus.Warnln(err)
+		logrus.Warnln(script, ":", err)
 		return err
 	}
 	err = commandline.Wait()
 	if err != nil {
-		logrus.Errorln(err)
+		logrus.Errorln(script, ":", err)
 		return err
 	}
 	// logrus.Tracef("%s end\n", script)
@@ -96,18 +98,20 @@ func parallelRunOption(ctx context.Context, interpreter string, scripts []string
 	var lock sync.Mutex
 	wg := sync.WaitGroup{}
 	failedArr := make([]int, 0)
-	for index, script := range scripts {
+	for _, script := range scripts {
 		wg.Add(1)
-		go func(script string, num int) {
+		go func(script string) {
 			defer wg.Done()
-			err := runOption(ctx, interpreter, script, num, args)
+			number_string := regexp.MustCompile(`[0-9]+\.`).FindString(script)
+			number, _ := strconv.Atoi(strings.Split(number_string, ".")[0])
+			err := runOption(ctx, interpreter, script, number, args)
 			if err != nil {
 				lock.Lock()
 				// WARN: 这里是从1开始定义的
-				failedArr = append(failedArr, num+1)
+				failedArr = append(failedArr, number)
 				lock.Unlock()
 			}
-		}(script, index)
+		}(script)
 		time.Sleep(time.Duration(10) * time.Microsecond)
 	}
 	wg.Wait()
