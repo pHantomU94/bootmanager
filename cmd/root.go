@@ -19,6 +19,7 @@ var (
 	log bool		// 保存日志
 	pattern string  // 自定义格式
 	option string 	// 自定义操作
+	retries int		// 重传次数
 	interpreter string
 	rootCmd = &cobra.Command{
 		Use: "bootmanager",
@@ -48,6 +49,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&pattern, "pattern", "p","", "Specify custom script pattern")
 	rootCmd.PersistentFlags().StringVarP(&option, "option", "o","", "Specify custom option")
 	rootCmd.PersistentFlags().StringVarP(&interpreter, "interpreter", "i","", "Specify interpreter for the custom option")
+	rootCmd.PersistentFlags().IntVarP(&retries, "retries", "r", 0, "Specify retries for failed scripts")
 	// 用viper收集参数
 	viper.BindPFlag("bootFlag", rootCmd.PersistentFlags().Lookup("boot"))
 	viper.BindPFlag("configureFlag", rootCmd.PersistentFlags().Lookup("configure"))
@@ -58,6 +60,7 @@ func init() {
 	viper.BindPFlag("option", rootCmd.PersistentFlags().Lookup("option"))
 	viper.BindPFlag("interpreter", rootCmd.PersistentFlags().Lookup("interpreter"))
 	viper.BindPFlag("logFlag", rootCmd.PersistentFlags().Lookup("log"))
+	viper.BindPFlag("retries", rootCmd.PersistentFlags().Lookup("retries"))
 }
 
 func initConfig() {

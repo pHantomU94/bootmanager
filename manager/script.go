@@ -93,11 +93,27 @@ func runOption(ctx context.Context, interpreter string, script string, index int
 	return nil
 }
 
+// 重试函数
+func retryOption(ctx context.Context, interpreter string, script string, number int, retries int, args []string) (err error) {
+	// 重试指定次数脚本
+	logrus.Warnf("Retry %s for %d times\n", script, retries)
+	for i:=0; i<retries ; i++ {
+		err = runOption(ctx, interpreter, script, number, args)
+		if err == nil {
+			logrus.Infof("Retry %s success at %d time\n", script, i+1)
+			return
+		}
+	}
+	logrus.Errorf("Retry %s failed\n", script)
+	return
+}
+
 // 执行并行操作
-func parallelRunOption(ctx context.Context, interpreter string, scripts []string, args []string) {
+func parallelRunOption(ctx context.Context, interpreter string, scripts []string, retries int, args []string) {
 	var lock sync.Mutex
 	wg := sync.WaitGroup{}
 	failedArr := make([]int, 0)
+	failedScripts := make([]string, 0)
 	for _, script := range scripts {
 		wg.Add(1)
 		go func(script string) {
@@ -109,6 +125,7 @@ func parallelRunOption(ctx context.Context, interpreter string, scripts []string
 				lock.Lock()
 				// WARN: 这里是从1开始定义的
 				failedArr = append(failedArr, number)
+				failedScripts = append(failedScripts, script)
 				lock.Unlock()
 			}
 		}(script)
@@ -116,11 +133,31 @@ func parallelRunOption(ctx context.Context, interpreter string, scripts []string
 	}
 	wg.Wait()
 
-	
-	if len(failedArr) != 0 {
-		sort.Sort(sort.IntSlice(failedArr))
-		logrus.Infof("Option Done. Total: %d. Failed: %d\n", len(scripts), len(failedArr))
-		logrus.Infof("Failed nodes: %v\n", failedArr)
+	// 对失败列表中的脚本执行重试操作，重试指定次数
+	failedNodes := make([]int, 0)
+	if retries > 0 {
+		for index, script := range failedScripts {
+			wg.Add(1)
+			go func(script string, number int) {
+				defer wg.Done()
+				err := retryOption(ctx, interpreter, script, number, retries, args)
+				if err != nil {
+					lock.Lock()
+					failedNodes = append(failedNodes, number)
+					lock.Unlock()
+				}
+			}(script, failedArr[index])
+			time.Sleep(time.Duration(10) * time.Microsecond)
+		}
+	} else {
+		failedNodes = append(failedNodes, failedArr...)
+	}
+	wg.Wait()
+
+	if len(failedNodes) != 0 {
+		sort.Sort(sort.IntSlice(failedNodes))
+		logrus.Infof("Option Done. Total: %d. Failed: %d\n", len(scripts), len(failedNodes))
+		logrus.Infof("Failed nodes: %v\n", failedNodes)
 	} else {
 		logrus.Infof("Option Done. Total: %d. All success!\n", len(scripts))
 	}

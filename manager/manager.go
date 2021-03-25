@@ -129,6 +129,7 @@ func Run(args []string) {
 
 	customPattern := viper.GetString("pattern")
 	customInterpreter := viper.GetString("interpreter")
+	retries := viper.GetInt("retries")
 
 	ctx := context.Background()
 	if customPattern != "" {
@@ -142,7 +143,7 @@ func Run(args []string) {
 			os.Exit(1)
 		}
 		logrus.Infof("Custom pattern [%s] start.\n", customPattern)
-		parallelRunOption(ctx, customInterpreter, scripts, args)
+		parallelRunOption(ctx, customInterpreter, scripts, retries, args)
 	}
 
 	// 判断是否有操作要执行
@@ -174,7 +175,7 @@ func Run(args []string) {
 		parallel := viper.GetBool(option+".parallel")
 		logrus.Infof("Option [%s] start.\n", option)
 		if parallel {
-			parallelRunOption(ctx, interpreter, scripts, args)
+			parallelRunOption(ctx, interpreter, scripts, retries, args)
 		} else {
 			serialRunOptin(ctx, interpreter, scripts, args)
 		}
