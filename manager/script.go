@@ -122,42 +122,28 @@ func parallelRunOption(ctx context.Context, interpreter string, scripts []string
 			number, _ := strconv.Atoi(strings.Split(number_string, ".")[0])
 			err := runOption(ctx, interpreter, script, number, args)
 			if err != nil {
-				lock.Lock()
-				// WARN: 这里是从1开始定义的
-				failedArr = append(failedArr, number)
-				failedScripts = append(failedScripts, script)
-				lock.Unlock()
+				if retries != 0 {
+					// 失败重试
+					err = retryOption(ctx, interpreter, script, number, retries, args)
+				}
+				// 重试失败
+				if err != nil {
+					lock.Lock()
+					// WARN: 这里是从1开始定义的
+					failedArr = append(failedArr, number)
+					failedScripts = append(failedScripts, script)
+					lock.Unlock()
+				}
 			}
 		}(script)
 		time.Sleep(time.Duration(10) * time.Microsecond)
 	}
 	wg.Wait()
 
-	// 对失败列表中的脚本执行重试操作，重试指定次数
-	failedNodes := make([]int, 0)
-	if retries > 0 {
-		for index, script := range failedScripts {
-			wg.Add(1)
-			go func(script string, number int) {
-				defer wg.Done()
-				err := retryOption(ctx, interpreter, script, number, retries, args)
-				if err != nil {
-					lock.Lock()
-					failedNodes = append(failedNodes, number)
-					lock.Unlock()
-				}
-			}(script, failedArr[index])
-			time.Sleep(time.Duration(10) * time.Microsecond)
-		}
-	} else {
-		failedNodes = append(failedNodes, failedArr...)
-	}
-	wg.Wait()
-
-	if len(failedNodes) != 0 {
-		sort.Sort(sort.IntSlice(failedNodes))
-		logrus.Infof("Option Done. Total: %d. Failed: %d\n", len(scripts), len(failedNodes))
-		logrus.Infof("Failed nodes: %v\n", failedNodes)
+	if len(failedArr) != 0 {
+		sort.Sort(sort.IntSlice(failedArr))
+		logrus.Infof("Option Done. Total: %d. Failed: %d\n", len(scripts), len(failedArr))
+		logrus.Infof("Failed nodes: %v\n", failedArr)
 	} else {
 		logrus.Infof("Option Done. Total: %d. All success!\n", len(scripts))
 	}
