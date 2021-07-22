@@ -6,7 +6,7 @@
  * @Author: hsj
  * @Date: 2020-12-15 19:47:14
  * @LastEditors: hsj
- * @LastEditTime: 2021-07-22 11:39:32
+ * @LastEditTime: 2021-07-22 12:13:39
  */
 package main
 
@@ -30,7 +30,7 @@ func init() {
 
 func main() {
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
+	signal.Notify(c, os.Interrupt)
 	go func() {
 		select {
 		case sig := <-c:
