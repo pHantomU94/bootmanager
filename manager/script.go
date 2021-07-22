@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
-	"strconv"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -63,7 +63,6 @@ func runOption(ctx context.Context, interpreter string, script string, index int
 	cmdargs = append(cmdargs, script)
 	cmdargs = append(cmdargs, args...)
 	commandline := exec.CommandContext(ctx, interpreter, cmdargs...)
-
 	// DEBUG: 这里仅作为调试功能
 	if viper.GetBool("logFlag") {
 		logPath := fmt.Sprintf("log%d.txt", index+1)
